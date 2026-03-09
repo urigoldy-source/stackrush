@@ -2575,7 +2575,7 @@ async function sendFriendRequest() {
   if (!currentUser) { openAuthModal('login'); return; }
 
   // Find user by username
-  const { data: target } = await sb.from('profiles').select('id, username').eq('username', username).single();
+  const { data: target } = await sb.from('profiles').select('id, username').ilike('username', username).single();
   if (!target) { msg.textContent = 'Player not found.'; return; }
   if (target.id === currentUser.id) { msg.textContent = "You can't add yourself."; return; }
 
