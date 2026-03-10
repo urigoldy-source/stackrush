@@ -2020,7 +2020,7 @@ function renderMatchRow(m) {
   const code     = matchShortCode(m.id);
   const isOnline = m.match_type === 'online';
 
-  if (m.status === 'pending_opponent') {
+  if (m.status === 'pending_opponent' && m.challenger_id === currentUser.id) {
     // I played, waiting for opponent
     const shareLink = getShareLink(m.id);
     return `<div class="challenge-row" style="flex-direction:column;align-items:stretch;">
@@ -2034,7 +2034,7 @@ function renderMatchRow(m) {
     </div>`;
   }
 
-  if (m.status === 'open' && m.opponent_id === currentUser.id) {
+  if ((m.status === 'open' || m.status === 'pending_opponent') && m.opponent_id === currentUser.id) {
     // Opponent role — I haven't played yet
     return `<div class="challenge-row">
       <div>
