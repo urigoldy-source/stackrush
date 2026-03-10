@@ -2034,7 +2034,7 @@ function renderMatchRow(m) {
     </div>`;
   }
 
-  if (m.status === 'open') {
+  if (m.status === 'open' && m.opponent_id === currentUser.id) {
     // Opponent role — I haven't played yet
     return `<div class="challenge-row">
       <div>
