@@ -13,13 +13,11 @@ export default async function handler(req, res) {
         'Accept': 'application/json',
         'Authorization': `Bearer ${process.env.MAILERLITE_API_KEY}`
       },
-      body: JSON.stringify({
-        email: email,
-        groups: ['Stack Rush Waitlist']
-      })
+      body: JSON.stringify({ email })
     });
 
     const data = await response.json();
+    console.log('MailerLite response:', response.status, JSON.stringify(data));
 
     // 200, 201 = success, 422 = already subscribed (also fine)
     if (response.status === 200 || response.status === 201 || response.status === 422) {
