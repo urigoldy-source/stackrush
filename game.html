@@ -3924,19 +3924,16 @@ async function loadActiveMatches() {
     .order('created_at', { ascending: false })
     .limit(8);
   // Also fetch open online matches from same platform and mode for auto-matching
-  const { data: openOnline, error: openOnlineError } = await sb.from('matches')
+  const { data: openOnline } = await sb.from('matches')
     .select('*')
     .eq('status', 'pending_opponent')
     .eq('match_type', 'online')
     .neq('challenger_id', currentUser.id)
     .limit(3);
-  console.log('[matchmaking] openOnline data:', openOnline, 'error:', openOnlineError);
   const combined = [...(data || [])];
   (openOnline || []).forEach(m => {
     if (!combined.find(r => r.id === m.id)) combined.push(m);
   });
-  console.log('[matchmaking] combined array:', combined);
-
   if (combined.length === 0) {
     el.innerHTML = '<div style="text-align:center;color:var(--muted);font-family:\'DM Mono\',monospace;font-size:11px;padding:16px;">No active matches yet</div>';
     renderProfileMatches([]);
@@ -4086,10 +4083,7 @@ async function playAsOpponent(matchId) {
     status:            'open',
   }).eq('id', matchId).eq('status','pending_opponent').select().single();
 
-  if (error || !updated) {
-    console.log('[playAsOpponent] claim failed — error:', error, 'updated:', updated, 'matchId:', matchId);
-    alert('Match no longer available.'); await refundToken(); return;
-  }
+  if (error || !updated) { alert('Match no longer available.'); await refundToken(); return; }
 
   // Opponent skips loadout screen — uses challenger's loadout
   activeMatch = { ...updated, _role: 'opponent', _fromLoadout: true };
@@ -4206,23 +4200,18 @@ function showOppLoadoutBanner(msg) {
 
 // ── Submit match result ───────────────────────────────────────
 async function submitMatchResult() {
-  if (!activeMatch || !currentUser) {
-    console.log('[submitMatchResult] early return — currentUser:', currentUser, 'activeMatch:', activeMatch);
-    return;
-  }
+  if (!activeMatch || !currentUser) return;
   const match       = activeMatch;
   const iAmChallenger = match.challenger_id === currentUser.id;
-  console.log('[submitMatchResult] currentUser:', currentUser, 'activeMatch:', match, 'iAmChallenger:', iAmChallenger);
   activeMatch = null;
 
   if (iAmChallenger) {
-    const { data: updateData, error: updateError } = await sb.from('matches').update({
+    await sb.from('matches').update({
       challenger_score:   G.score,
       challenger_bands:   G.bands,
       challenger_actions: G.log || [],
       status:             'pending_opponent',
-    }).eq('id', match.id).select().single();
-    console.log('[submitMatchResult] update result — data:', updateData, 'error:', updateError);
+    }).eq('id', match.id);
 
     showMatchPendingScreen(match, G.score);
   } else {
