@@ -4086,7 +4086,10 @@ async function playAsOpponent(matchId) {
     status:            'open',
   }).eq('id', matchId).eq('status','pending_opponent').select().single();
 
-  if (error || !updated) { alert('Match no longer available.'); await refundToken(); return; }
+  if (error || !updated) {
+    console.log('[playAsOpponent] claim failed — error:', error, 'updated:', updated, 'matchId:', matchId);
+    alert('Match no longer available.'); await refundToken(); return;
+  }
 
   // Opponent skips loadout screen — uses challenger's loadout
   activeMatch = { ...updated, _role: 'opponent', _fromLoadout: true };
