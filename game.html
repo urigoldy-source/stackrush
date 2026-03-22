@@ -2067,6 +2067,7 @@ function spawnPiece() {
   G.curX = Math.floor((COLS - (maxC - minC + 1)) / 2) - minC;
   G.curY = 0;
   G.reserveUsed = false;
+  logAction('spawn', { piece: type, x: G.curX, y: G.curY });
   if (!canPlaceIgnoringAnchors(G.cur, G.curX, G.curY)) endGame();
 }
 
@@ -2908,6 +2909,7 @@ function activatePower(slotIdx) {
   const def = POWER_REGISTRY[id];
   if (!def) return;
   G.powers[id].used = true;
+  logAction('power', { id, slot: slotIdx });
   playSound('POWER_ACTIVATE');
   def.activate();
   updatePowerBarUsed(slotIdx);
