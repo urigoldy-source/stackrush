@@ -3924,12 +3924,13 @@ async function loadActiveMatches() {
     .order('created_at', { ascending: false })
     .limit(8);
   // Also fetch open online matches from same platform and mode for auto-matching
-  const { data: openOnline } = await sb.from('matches')
+  const { data: openOnline, error: openOnlineError } = await sb.from('matches')
     .select('*')
     .eq('status', 'pending_opponent')
     .eq('match_type', 'online')
     .neq('challenger_id', currentUser.id)
     .limit(3);
+  console.log('[matchmaking] openOnline data:', openOnline, 'error:', openOnlineError);
   const combined = [...(data || [])];
   (openOnline || []).forEach(m => {
     if (!combined.find(r => r.id === m.id)) combined.push(m);
