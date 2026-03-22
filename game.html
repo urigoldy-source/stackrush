@@ -3935,6 +3935,7 @@ async function loadActiveMatches() {
   (openOnline || []).forEach(m => {
     if (!combined.find(r => r.id === m.id)) combined.push(m);
   });
+  console.log('[matchmaking] combined array:', combined);
 
   if (combined.length === 0) {
     el.innerHTML = '<div style="text-align:center;color:var(--muted);font-family:\'DM Mono\',monospace;font-size:11px;padding:16px;">No active matches yet</div>';
