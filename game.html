@@ -4234,12 +4234,13 @@ async function submitMatchResult() {
     const trophyChange  = 25;
 
     await sb.from('matches').update({
-      opponent_score:  G.score,
-      opponent_bands:  G.bands,
-      status:          'completed',
-      winner_id:       winnerId,
-      trophy_change:   trophyChange,
-      completed_at:    new Date().toISOString(),
+      opponent_score:   G.score,
+      opponent_bands:   G.bands,
+      opponent_actions: G.log || [],
+      status:           'completed',
+      winner_id:        winnerId,
+      trophy_change:    trophyChange,
+      completed_at:     new Date().toISOString(),
     }).eq('id', match.id);
 
     const p    = loadProfile();
