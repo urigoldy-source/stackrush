@@ -5197,11 +5197,6 @@ window.setGameMode          = setGameMode;
 window.loadLiveGames        = loadLiveGames;
 window.openSpectator        = openSpectator;
 window.openSpectatorById    = openSpectatorById;
-window.closePowerRadial     = closePowerRadial;
-window.startTouchMove       = startTouchMove;
-window.stopTouchMove        = stopTouchMove;
-window.startSoftDrop        = startSoftDrop;
-window.stopSoftDrop         = stopSoftDrop;
 
 // ══════════════════════════════════════════════════════════════
 //  AUDIO ENGINE — Web Audio API, zero external files
@@ -5313,8 +5308,9 @@ _ae = (function() {
     }
   }
 
-  function _startMusic() {
+  async function _startMusic() {
     if (!init() || mActive) return;
+    if (ac.state === 'suspended') await ac.resume();
     mActive = true; beatIdx = 0; arpI = 0;
     nextBeat = ac.currentTime + 0.05;
     mGain.gain.cancelScheduledValues(ac.currentTime);
@@ -5351,6 +5347,7 @@ _ae = (function() {
   // ── SFX ─────────────────────────────────────────────────────
   function _playSound(name, param) {
     if (!init()) return;
+    if (ac.state === 'suspended') ac.resume();
     if (!cfg.sOn) return;
     const t = ac.currentTime;
     if (name === 'PIECE_MOVE') {
