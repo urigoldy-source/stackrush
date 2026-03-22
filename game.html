@@ -3967,6 +3967,18 @@ function renderMatchRow(m) {
     </div>`;
   }
 
+  if (m.status === 'pending_opponent' && m.match_type === 'online'
+      && m.challenger_id !== currentUser.id && !m.opponent_id) {
+    // Stranger's open online match — available to join
+    return `<div class="challenge-row">
+      <div>
+        <div class="ch-name">Online match from <b style="color:var(--gold)">${m.challenger_username||'?'}</b></div>
+        <div class="ch-meta">Beat their score of <b style="color:var(--text)">${(m.challenger_score||0).toLocaleString()}</b></div>
+      </div>
+      <button class="btn-accept-challenge" onclick="playAsOpponent('${m.id}')">PLAY NOW</button>
+    </div>`;
+  }
+
   if ((m.status === 'open' || m.status === 'pending_opponent') && m.opponent_id === currentUser.id) {
     // Opponent role — I haven't played yet
     return `<div class="challenge-row">
