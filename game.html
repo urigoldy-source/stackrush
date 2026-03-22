@@ -3928,8 +3928,6 @@ async function loadActiveMatches() {
     .select('*')
     .eq('status', 'pending_opponent')
     .eq('match_type', 'online')
-    .eq('platform', PLATFORM)
-    .eq('mode', _gameMode)
     .neq('challenger_id', currentUser.id)
     .limit(3);
   const combined = [...(data || [])];
