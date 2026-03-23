@@ -942,6 +942,97 @@
       overflow-y: auto;
     }
   }
+
+  /* ── TITLE SCREEN: OPEN CHALLENGES + LIVE NOW ── */
+  .title-live-section {
+    width: 100%; max-width: 440px; margin-top: 24px;
+  }
+  .title-section-hdr {
+    font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.4em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .title-section-hdr::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .title-live-list {
+    border: 1px solid var(--border); max-height: 260px; overflow-y: auto;
+  }
+  .tl-empty {
+    padding: 16px; text-align: center; font-family: 'DM Mono', monospace;
+    font-size: 10px; color: var(--muted); letter-spacing: 0.1em;
+  }
+  .oc-card {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  .oc-card:last-child { border-bottom: none; }
+  .oc-name { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text); margin-bottom: 2px; }
+  .oc-meta { font-size: 10px; color: var(--muted); }
+  .btn-oc-accept {
+    background: var(--gold); color: #000; border: none;
+    padding: 8px 14px; font-family: 'DM Mono', monospace; font-size: 10px;
+    font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase;
+    cursor: pointer; white-space: nowrap; flex-shrink: 0; margin-left: 8px;
+  }
+  .ln-card {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  .ln-card:last-child { border-bottom: none; }
+  .ln-names { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text); margin-bottom: 2px; }
+  .ln-meta  { font-size: 10px; color: var(--muted); }
+  .btn-ln-watch {
+    background: transparent; color: var(--gold); border: 1px solid rgba(240,192,64,0.4);
+    padding: 7px 12px; font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer;
+    white-space: nowrap; flex-shrink: 0; margin-left: 8px;
+  }
+  .btn-ln-watch:hover { border-color: var(--gold); }
+
+  /* ── SPECTATOR SCREEN (rebuilt) ── */
+  #spectator-screen {
+    flex-direction: column !important; padding: 0 !important;
+    overflow: hidden; justify-content: flex-start !important;
+    align-items: stretch !important;
+  }
+  #spec-timer {
+    font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500;
+    color: var(--gold); text-align: center; padding: 10px 0 6px;
+    letter-spacing: 0.15em; flex-shrink: 0;
+  }
+  #spec-boards {
+    display: flex; flex: 1; min-height: 0; gap: 8px;
+    padding: 0 8px; width: 100%; align-items: flex-start; justify-content: center;
+  }
+  .spec-col {
+    flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0;
+  }
+  .spec-col canvas {
+    display: block; border: 1px solid var(--border); image-rendering: pixelated;
+    width: 100%; height: auto;
+  }
+  .spec-score {
+    font-family: 'DM Mono', monospace; font-size: 18px; color: var(--gold);
+    margin-top: 5px; letter-spacing: 0.08em;
+  }
+  .spec-meta {
+    font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted);
+    margin-top: 2px; letter-spacing: 0.1em;
+  }
+  .spec-player {
+    font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text);
+    margin-top: 4px; letter-spacing: 0.2em; text-transform: uppercase;
+  }
+  #btn-spec-back { flex-shrink: 0; margin: 8px auto 10px; }
+
+  /* ── WATCH NOW notification on match-pending ── */
+  #mp-watch-now {
+    display: none; margin-top: 14px; width: 100%;
+    background: var(--gold); color: #000; border: none;
+    padding: 14px; font-family: 'DM Mono', monospace; font-size: 12px;
+    font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  #mp-watch-now:hover { opacity: 0.85; }
 </style>
 </head>
 <body>
@@ -1032,6 +1123,22 @@
     <span class="key">↓</span><span>Soft drop (+1)</span>
     <span class="key">Space</span><span>Hard drop (+2)</span>
     <span class="key">C</span><span>Reserve (Tier 5+)</span>
+  </div>
+
+  <!-- Open Challenges -->
+  <div class="title-live-section">
+    <div class="title-section-hdr">OPEN CHALLENGES</div>
+    <div class="title-live-list" id="title-open-challenges">
+      <div class="tl-empty">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Live Now -->
+  <div class="title-live-section">
+    <div class="title-section-hdr">LIVE NOW <span class="live-badge" style="font-size:6px;">LIVE</span></div>
+    <div class="title-live-list" id="title-live-now">
+      <div class="tl-empty">Loading…</div>
+    </div>
   </div>
 </div>
 
@@ -1337,7 +1444,8 @@
 
   <div style="font-size:11px;color:var(--muted);margin-bottom:24px;" id="mp-seed-display"></div>
 
-  <div style="display:flex;flex-direction:column;gap:8px;align-items:center;">
+  <div style="display:flex;flex-direction:column;gap:8px;align-items:center;width:420px;max-width:100%;">
+    <button id="mp-watch-now">WATCH OPPONENT PLAY LIVE</button>
     <button class="btn-primary" id="btn-mp-play-again">PLAY SOLO</button>
     <button class="btn-secondary" id="btn-mp-versus" style="margin-top:4px">⚔ PLAY ANOTHER VS</button>
     <button class="btn-secondary" id="btn-mp-home" style="margin-top:4px">MAIN MENU</button>
@@ -1396,30 +1504,29 @@
 </div>
 
 <!-- ══ SPECTATOR SCREEN ═══════════════════════════════════════ -->
-<div id="spectator-screen" class="screen" style="overflow-y:auto;padding:24px 20px;align-items:center;">
-  <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.4em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Spectating</div>
-  <div style="font-family:'DM Mono',monospace;font-size:18px;color:var(--gold);letter-spacing:0.1em;margin-bottom:4px;" id="spec-match-title">—</div>
-  <div style="font-size:11px;color:var(--muted);margin-bottom:20px;" id="spec-match-meta"></div>
+<div id="spectator-screen" class="screen">
+  <!-- Timer at top center -->
+  <div id="spec-timer">00:00</div>
 
-  <div style="display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap;justify-content:center;">
-    <!-- Live board (opponent or challenger) -->
-    <div>
-      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.3em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;text-align:center;" id="spec-live-label">LIVE</div>
-      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);text-align:center;margin-bottom:4px;" id="spec-live-score">0</div>
-      <canvas id="spec-live-board" style="display:block;border:1px solid var(--border);image-rendering:pixelated;"></canvas>
+  <!-- Two boards side by side -->
+  <div id="spec-boards">
+    <!-- Left: Opponent (live) -->
+    <div class="spec-col">
+      <canvas id="spec-live-board"></canvas>
+      <div class="spec-score" id="spec-live-score">0</div>
+      <div class="spec-meta"  id="spec-live-meta">—</div>
+      <div class="spec-player" id="spec-live-label">OPPONENT</div>
     </div>
-
-    <!-- Replay board (challenger, shown when watching opponent) -->
-    <div id="spec-replay-wrap" style="display:none;">
-      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.3em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;text-align:center;">CHALLENGER REPLAY</div>
-      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-align:center;margin-bottom:4px;" id="spec-replay-score">0</div>
-      <div class="spectator-board-wrap">
-        <canvas id="spec-replay-board" style="display:block;border:1px solid var(--border);opacity:0.6;image-rendering:pixelated;"></canvas>
-      </div>
+    <!-- Right: Challenger (replay) -->
+    <div class="spec-col" style="opacity:0.75;">
+      <canvas id="spec-replay-board"></canvas>
+      <div class="spec-score" id="spec-replay-score" style="color:var(--muted);">0</div>
+      <div class="spec-meta"  id="spec-replay-meta">—</div>
+      <div class="spec-player" id="spec-replay-label">CHALLENGER</div>
     </div>
   </div>
 
-  <button class="btn-secondary" id="btn-spec-back" style="margin-top:20px;">STOP WATCHING</button>
+  <button class="btn-secondary" id="btn-spec-back">STOP WATCHING</button>
 </div>
 
 <!-- ══ CHALLENGE ACCEPT SCREEN ═══════════════════════════════ -->
@@ -2276,6 +2383,65 @@ function _replayCellsFit(cells, ox, oy, board) {
   return true;
 }
 
+// Like replayLog but processes only events up to time t (ms offset from match start).
+// The current falling piece's Y is interpolated so it appears to fall smoothly.
+function replayLogAtTime(events, t) {
+  const board = Array.from({ length: ROWS }, () => new Array(COLS).fill(null));
+  let type = null, cells = null, x = 0, y = 0, rot = 0, pieceStartT = 0;
+  let processedUpTo = 0;
+
+  for (processedUpTo = 0; processedUpTo < events.length; processedUpTo++) {
+    const ev = events[processedUpTo];
+    if (ev.t > t) break;
+
+    if (ev.type === 'spawn') {
+      type = ev.piece; rot = 0;
+      cells = PIECES[type]?.[0] ?? null;
+      x = ev.x ?? Math.floor(COLS / 2); y = ev.y ?? 0;
+      pieceStartT = ev.t;
+    } else if (ev.type === 'move' && cells) {
+      x += ev.dx;
+    } else if (ev.type === 'rotate' && type && cells) {
+      const len = PIECES[type].length;
+      rot = ((rot + ev.dir) % len + len) % len;
+      cells = PIECES[type][rot];
+      x += ev.kick ?? 0;
+    } else if (ev.type === 'hard' && cells) {
+      let dy = 0;
+      while (_replayCellsFit(cells, x, y + dy + 1, board)) dy++;
+      const color = PIECE_COLORS[type] || '#888';
+      for (const [c, r] of cells) {
+        const nr = r + y + dy, nc = c + x;
+        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) board[nr][nc] = color;
+      }
+      for (let r = ROWS - 1; r >= 0; ) {
+        if (board[r].every(Boolean)) { board.splice(r, 1); board.unshift(new Array(COLS).fill(null)); }
+        else r--;
+      }
+      cells = null; type = null;
+    }
+  }
+
+  // Animate current piece Y: interpolate from spawn_y to landing_y over piece duration
+  let displayY = y;
+  if (cells && type) {
+    let dy = 0;
+    while (_replayCellsFit(cells, x, y + dy + 1, board)) dy++;
+    const landingY = y + dy;
+
+    let nextHardT = t + 4000; // default 4s to land if no hard event found
+    for (let j = processedUpTo; j < events.length; j++) {
+      if (events[j].type === 'hard') { nextHardT = events[j].t; break; }
+    }
+
+    const elapsed  = t - pieceStartT;
+    const duration = Math.max(100, nextHardT - pieceStartT);
+    displayY = Math.round(y + (landingY - y) * Math.min(1, elapsed / duration));
+  }
+
+  return { board, cells, x, y: displayY, type };
+}
+
 // ══════════════════════════════════════════════════════════════
 //  GAME LOOP
 // ══════════════════════════════════════════════════════════════
@@ -2428,6 +2594,15 @@ function showScreen(id) {
   if (id === 'game-screen') resizeBoardForMobile();
   // Populate install screen content on demand
   if (id === 'install-screen') initInstallScreen();
+  // Title screen: load + subscribe to live data
+  if (id === 'title-screen') { loadTitleLiveData(); _startTitleLiveSubscription(); }
+  // Leaving spectator: stop animation + unsubscribe
+  if (id !== 'spectator-screen') {
+    if (_specAnimInterval) { clearInterval(_specAnimInterval); _specAnimInterval = null; }
+    if (_spectatorChannel && id !== 'game-screen') {
+      _spectatorChannel.unsubscribe(); _spectatorChannel = null;
+    }
+  }
 }
 
 function startNewGame() {
@@ -3453,6 +3628,10 @@ let currentUser = null;
 
 // ── Init: check existing session ──────────────────────────────
 (async () => {
+  // Load title screen live data immediately (works for guests too)
+  setTimeout(loadTitleLiveData, 500);
+  setTimeout(_startTitleLiveSubscription, 1000);
+
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
     currentUser = session.user;
@@ -3485,9 +3664,12 @@ let currentUser = null;
         closeAuthModal();
         const handled = await checkPendingAddFriend() || await checkChallengeInUrl();
       }
+      // Refresh title screen live data now that we have a user id to exclude
+      loadTitleLiveData();
     } else {
       updateNotifBadge(0);
       updateUserIndicator();
+      loadTitleLiveData();
     }
   });
 })();
@@ -3929,8 +4111,12 @@ function setGameMode(mode) {
 const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 const PLATFORM = isMobile ? 'mobile' : 'desktop';
 
-// ── Spectator channel ─────────────────────────────────────────
-let _spectatorChannel = null;
+// ── Spectator channel + animation ─────────────────────────────
+let _spectatorChannel   = null;
+let _specAnimInterval   = null;  // 100ms animation loop for spectator
+let _matchWatchChannel  = null;  // Postgres Changes: notify challenger when opponent claims
+let _titleLiveChannel   = null;  // Postgres Changes: title screen live lists
+let _titleRefreshTimer  = null;  // debounce for title live refresh
 
 function matchShortCode(uuid) {
   return uuid.replace(/-/g,'').slice(0,8).toUpperCase();
@@ -4319,7 +4505,30 @@ function showMatchPendingScreen(match, myScore) {
   }
 
   document.getElementById('mp-seed-display').textContent = `Seed: ${match.seed}`;
+  document.getElementById('mp-watch-now').style.display = 'none';
   showScreen('match-pending-screen');
+
+  // Subscribe to match status changes — notify when opponent claims the match
+  if (_matchWatchChannel) { _matchWatchChannel.unsubscribe(); _matchWatchChannel = null; }
+  if (match.match_type === 'online' && currentUser) {
+    _matchWatchChannel = sb.channel(`match:watch:${match.id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches',
+          filter: `id=eq.${match.id}` }, async (payload) => {
+        const updated = payload.new;
+        if (updated.status !== 'open' && updated.status !== 'completed') return;
+        _matchWatchChannel?.unsubscribe(); _matchWatchChannel = null;
+
+        document.getElementById('mp-status-title').textContent = 'Opponent is playing now!';
+        document.getElementById('mp-status-body').textContent =
+          `${updated.opponent_username || 'Someone'} just accepted your challenge and is playing live.`;
+
+        const watchBtn = document.getElementById('mp-watch-now');
+        watchBtn.style.display = 'block';
+        // Attach challenger_actions from the original match for replay
+        watchBtn.onclick = () => openSpectator({ ...updated, challenger_actions: match.challenger_actions || [] });
+      })
+      .subscribe();
+  }
 }
 
 function showMatchResultScreen(match) {
@@ -4766,6 +4975,68 @@ function _timeAgo(isoStr) {
   return `${Math.floor(secs / 3600)}h ago`;
 }
 
+// ── Title screen live data (Open Challenges + Live Now) ───────
+async function loadTitleLiveData() {
+  if (!sb) return;
+  const myId = currentUser?.id || '';
+
+  const [{ data: openChallenges }, { data: liveMatches }] = await Promise.all([
+    sb.from('matches').select('*')
+      .eq('status', 'pending_opponent').eq('match_type', 'online')
+      .neq('challenger_id', myId || 'none')
+      .order('created_at', { ascending: false }).limit(10),
+    sb.from('matches').select('*')
+      .eq('status', 'open')
+      .order('created_at', { ascending: false }).limit(8),
+  ]);
+
+  const ocEl = document.getElementById('title-open-challenges');
+  const lnEl = document.getElementById('title-live-now');
+  if (ocEl) ocEl.innerHTML = _renderOpenChallenges(openChallenges || []);
+  if (lnEl) lnEl.innerHTML = _renderLiveNow(liveMatches || []);
+}
+
+function _renderOpenChallenges(list) {
+  if (!list.length) return '<div class="tl-empty">No open challenges right now</div>';
+  return list.map(m => {
+    const score  = (m.challenger_score || 0).toLocaleString();
+    const meta   = [m.bracket, m.mode === 'classic' ? '♟ Classic' : '⚡ Powered'].filter(Boolean).join(' · ');
+    return `<div class="oc-card">
+      <div>
+        <div class="oc-name">${m.challenger_username || 'Anonymous'}</div>
+        <div class="oc-meta">${score} pts · ${meta}</div>
+      </div>
+      <button class="btn-oc-accept" onclick="playAsOpponent('${m.id}')">ACCEPT &amp; PLAY</button>
+    </div>`;
+  }).join('');
+}
+
+function _renderLiveNow(list) {
+  if (!list.length) return '<div class="tl-empty">No live matches right now</div>';
+  return list.map(m => {
+    const challName = m.challenger_username || '?';
+    const oppName   = m.opponent_username   || '?';
+    const mJson     = encodeURIComponent(JSON.stringify(m));
+    return `<div class="ln-card">
+      <div>
+        <div class="ln-names">${challName} vs ${oppName}</div>
+        <div class="ln-meta">${m.bracket || ''} · ${m.mode === 'classic' ? '♟ Classic' : '⚡ Powered'}</div>
+      </div>
+      <button class="btn-ln-watch" onclick="openSpectator(decodeURIComponent('${mJson}'))">WATCH LIVE</button>
+    </div>`;
+  }).join('');
+}
+
+function _startTitleLiveSubscription() {
+  if (_titleLiveChannel) return; // already subscribed
+  _titleLiveChannel = sb.channel('title:matches')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
+      clearTimeout(_titleRefreshTimer);
+      _titleRefreshTimer = setTimeout(loadTitleLiveData, 800);
+    })
+    .subscribe();
+}
+
 async function loadLiveGames() {
   const el = document.getElementById('live-games-list');
   if (!el) return;
@@ -4816,63 +5087,38 @@ function openSpectatorById(id) {
 
 function openSpectator(matchJson) {
   const match = typeof matchJson === 'string' ? JSON.parse(matchJson) : matchJson;
-  const iAmChallenger = match.challenger_id === currentUser?.id;
-  // WATCH mode: challenger watching their own pending_opponent match as opponent plays live
-  const watchMode = iAmChallenger && match.status === 'pending_opponent';
-
-  document.getElementById('spec-match-title').textContent =
-    `${match.challenger_username || 'Challenger'} vs ${match.opponent_username || '???'}`;
-  document.getElementById('spec-match-meta').textContent =
-    `${match.bracket || ''} · ${match.mode === 'classic' ? '♟ Classic' : '⚡ Powered'}`;
-
-  const replayWrap = document.getElementById('spec-replay-wrap');
-  if (watchMode) {
-    document.getElementById('spec-live-label').textContent = 'OPPONENT — LIVE';
-    replayWrap.style.display = 'block';
-  } else {
-    const isOpponentLive = match.status === 'open';
-    document.getElementById('spec-live-label').textContent =
-      isOpponentLive ? 'OPPONENT — LIVE' : 'CHALLENGER — LIVE';
-    replayWrap.style.display = isOpponentLive ? 'block' : 'none';
-  }
-
   showScreen('spectator-screen');
-  startWatchingMatch(match, watchMode);
+  startWatchingMatch(match);
 }
 
-function startWatchingMatch(match, watchMode) {
-  if (_spectatorChannel) {
-    _spectatorChannel.unsubscribe();
-    _spectatorChannel = null;
-  }
+function startWatchingMatch(match) {
+  // Clean up previous state
+  if (_spectatorChannel)  { _spectatorChannel.unsubscribe();  _spectatorChannel = null; }
+  if (_specAnimInterval)  { clearInterval(_specAnimInterval);  _specAnimInterval = null; }
 
   const liveCanvas   = document.getElementById('spec-live-board');
   const replayCanvas = document.getElementById('spec-replay-board');
   const liveCtx      = liveCanvas.getContext('2d');
-  const replayCtx    = replayCanvas ? replayCanvas.getContext('2d') : null;
+  const replayCtx    = replayCanvas.getContext('2d');
 
-  // Size boards to full game board, scaled to fit screen
-  const SPEC_COLS = COLS;
-  const SPEC_ROWS = ROWS;
-  const maxW = Math.min(180, Math.floor((window.innerWidth - 80) / (watchMode ? 2 : 1)));
-  const SPEC_CELL = Math.max(8, Math.floor(maxW / SPEC_COLS));
-  liveCanvas.width  = SPEC_COLS * SPEC_CELL;
-  liveCanvas.height = SPEC_ROWS * SPEC_CELL;
-  if (replayCanvas) {
-    replayCanvas.width  = SPEC_COLS * SPEC_CELL;
-    replayCanvas.height = SPEC_ROWS * SPEC_CELL;
-  }
+  // Size boards: fill available width / 2, preserve COLS:ROWS ratio
+  const availW    = Math.floor((window.innerWidth - 24) / 2);
+  const availH    = window.innerHeight - 160; // subtract timer + score + name + back btn
+  const cellByW   = Math.floor(availW / COLS);
+  const cellByH   = Math.floor(availH / ROWS);
+  const SC        = Math.max(4, Math.min(cellByW, cellByH));
+  liveCanvas.width    = COLS * SC; liveCanvas.height    = ROWS * SC;
+  replayCanvas.width  = COLS * SC; replayCanvas.height  = ROWS * SC;
 
-  function drawSpecBoard(ctx, board, piece) {
-    const sc = ctx.canvas.width / SPEC_COLS;
+  function drawBoard(ctx, board, piece) {
     ctx.fillStyle = '#0F0F0F';
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    for (let r = 0; r < SPEC_ROWS; r++) {
-      for (let c = 0; c < SPEC_COLS; c++) {
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
         const color = board[r]?.[c];
         if (color) {
           ctx.fillStyle = color;
-          ctx.fillRect(c * sc + 1, r * sc + 1, sc - 2, sc - 2);
+          ctx.fillRect(c * SC + 1, r * SC + 1, SC - 2, SC - 2);
         }
       }
     }
@@ -4881,97 +5127,83 @@ function startWatchingMatch(match, watchMode) {
       ctx.globalAlpha = 0.85;
       for (const [c, r] of piece.cells) {
         const nc = c + piece.x, nr = r + piece.y;
-        if (nc >= 0 && nc < SPEC_COLS && nr >= 0 && nr < SPEC_ROWS) {
-          ctx.fillRect(nc * sc + 1, nr * sc + 1, sc - 2, sc - 2);
-        }
+        if (nc >= 0 && nc < COLS && nr >= 0 && nr < ROWS)
+          ctx.fillRect(nc * SC + 1, nr * SC + 1, SC - 2, SC - 2);
       }
       ctx.globalAlpha = 1;
     }
   }
 
   function renderState(ctx, state) {
-    const piece = state.cells
-      ? { cells: state.cells, x: state.x, y: state.y, color: PIECE_COLORS[state.type] || '#888' }
-      : null;
-    drawSpecBoard(ctx, state.board, piece);
+    drawBoard(ctx, state.board,
+      state.cells ? { cells: state.cells, x: state.x, y: state.y, color: PIECE_COLORS[state.type] || '#888' } : null);
   }
 
-  if (watchMode) {
-    // WATCH mode: challenger watching their own pending_opponent match.
-    // Right canvas: challenger's completed game (instant replay from stored actions).
-    // Left canvas: opponent's live game (Postgres Changes on match_events).
-    if (replayCtx && Array.isArray(match.challenger_actions) && match.challenger_actions.length > 0) {
-      const state = replayLog(match.challenger_actions);
-      renderState(replayCtx, state);
-      document.getElementById('spec-replay-score').textContent =
-        (match.challenger_score || 0).toLocaleString();
+  // --- Challenger (right board) — static replay from challenger_actions ---
+  const replayEvents  = Array.isArray(match.challenger_actions) ? match.challenger_actions : [];
+  const replayDuration = replayEvents.length ? replayEvents[replayEvents.length - 1].t : 0;
+  document.getElementById('spec-replay-label').textContent =
+    (match.challenger_username || 'CHALLENGER').toUpperCase();
+  document.getElementById('spec-replay-score').textContent =
+    (match.challenger_score || 0).toLocaleString();
+  document.getElementById('spec-replay-meta').textContent =
+    `${match.challenger_bands || 0} bands`;
+
+  // --- Opponent (left board) — live from match_events ---
+  let liveEvents    = [];
+  let liveVirtualT  = 0;   // virtual match-time (ms) at last update
+  let liveWallT     = Date.now(); // wall-clock when liveVirtualT was set
+  document.getElementById('spec-live-label').textContent =
+    (match.opponent_username || 'OPPONENT').toUpperCase();
+
+  // Initial fetch
+  (async () => {
+    const { data } = await sb.from('match_events')
+      .select('events, score')
+      .eq('match_id', match.id)
+      .eq('role', 'opponent')
+      .maybeSingle();
+    if (data?.events?.length) {
+      liveEvents   = data.events;
+      liveVirtualT = liveEvents[liveEvents.length - 1].t;
+      liveWallT    = Date.now();
+      document.getElementById('spec-live-score').textContent = (data.score || 0).toLocaleString();
     }
+  })();
 
-    // Fetch any existing opponent row immediately
-    (async () => {
-      const { data } = await sb.from('match_events')
-        .select('events, score')
-        .eq('match_id', match.id)
-        .eq('role', 'opponent')
-        .maybeSingle();
-      if (data?.events?.length) {
-        renderState(liveCtx, replayLog(data.events));
-        document.getElementById('spec-live-score').textContent =
-          (data.score || 0).toLocaleString();
-      }
-    })();
+  // Postgres Changes subscription for live opponent updates
+  _spectatorChannel = sb.channel(`spec:events:${match.id}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'match_events',
+        filter: `match_id=eq.${match.id}` }, (payload) => {
+      const row = payload.new;
+      if (!row || row.role !== 'opponent') return;
+      liveEvents   = row.events || [];
+      liveVirtualT = liveEvents.length ? liveEvents[liveEvents.length - 1].t : 0;
+      liveWallT    = Date.now();
+      document.getElementById('spec-live-score').textContent = (row.score || 0).toLocaleString();
+    })
+    .subscribe();
 
-    // Subscribe to Postgres Changes for live opponent updates
-    _spectatorChannel = sb.channel(`spec:events:${match.id}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'match_events',
-        filter: `match_id=eq.${match.id}`,
-      }, (payload) => {
-        const row = payload.new;
-        if (!row || row.role !== 'opponent') return;
-        renderState(liveCtx, replayLog(row.events || []));
-        document.getElementById('spec-live-score').textContent =
-          (row.score || 0).toLocaleString();
-      })
-      .subscribe();
-    return;
-  }
+  const specStartedAt = Date.now();
 
-  // Standard live-games spectator mode — broadcast channel snapshots
-  const showReplay = match.status === 'open';
-  let _gotFrame = false;
-  const _noDataTimer = setTimeout(() => {
-    if (_gotFrame) return;
-    document.getElementById('spec-live-score').textContent = '—';
-    const noDataEl = document.createElement('div');
-    noDataEl.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;' +
-      'justify-content:center;background:rgba(0,0,0,0.75);font-family:\'DM Mono\',monospace;' +
-      'font-size:11px;color:var(--muted);text-align:center;padding:16px;';
-    noDataEl.textContent = 'Game may have ended. No live data available.';
-    liveCanvas.parentElement.style.position = 'relative';
-    liveCanvas.parentElement.appendChild(noDataEl);
-  }, 5000);
+  // 100ms animation loop — re-renders both boards with smooth piece animation
+  _specAnimInterval = setInterval(() => {
+    const now        = Date.now();
+    const wallElapsed = now - specStartedAt;
 
-  const channelName = `game:${match.id}`;
-  _spectatorChannel = sb.channel(channelName, { config: { broadcast: { self: false } } });
-  _spectatorChannel.on('broadcast', { event: 'frame' }, ({ payload }) => {
-    if (!payload) return;
-    _gotFrame = true;
-    clearTimeout(_noDataTimer);
-    if (payload.role === 'challenger' && !showReplay) {
-      document.getElementById('spec-live-score').textContent = (payload.score || 0).toLocaleString();
-      drawSpecBoard(liveCtx, payload.board || []);
-    } else if (payload.role === 'opponent' && showReplay) {
-      document.getElementById('spec-live-score').textContent = (payload.score || 0).toLocaleString();
-      drawSpecBoard(liveCtx, payload.board || []);
-    }
-    if (payload.role === 'challenger' && showReplay && replayCtx) {
-      document.getElementById('spec-replay-score').textContent = (payload.score || 0).toLocaleString();
-      drawSpecBoard(replayCtx, payload.board || []);
-    }
-  }).subscribe();
+    // Right board: challenger replay advances in real wall time, capped at game end
+    const replayT = replayDuration ? Math.min(wallElapsed, replayDuration) : wallElapsed;
+    renderState(replayCtx, replayLogAtTime(replayEvents, replayT));
+
+    // Left board: live opponent — virtual time advances since last event batch
+    const liveT = liveVirtualT + (now - liveWallT);
+    renderState(liveCtx, replayLogAtTime(liveEvents, liveT));
+
+    // Timer
+    const secs = Math.floor(wallElapsed / 1000);
+    document.getElementById('spec-timer').textContent =
+      String(Math.floor(secs / 60)).padStart(2, '0') + ':' + String(secs % 60).padStart(2, '0');
+  }, 100);
 }
 
 function startSpectatorBroadcast(matchId) {
@@ -5354,6 +5586,7 @@ window.playAsOpponent       = playAsOpponent;
 window.challengeFriend      = challengeFriend;
 window.setGameMode          = setGameMode;
 window.loadLiveGames        = loadLiveGames;
+window.loadTitleLiveData    = loadTitleLiveData;
 window.openSpectator        = openSpectator;
 window.openSpectatorById    = openSpectatorById;
 
