@@ -2233,6 +2233,49 @@ function logAction(type, data = {}) {
   if (G.startTime) G.log.push({ t: Date.now() - G.startTime, type, ...data });
 }
 
+// Reconstruct board + current piece state from an action log (for spectator replay).
+function replayLog(events) {
+  const board = Array.from({ length: ROWS }, () => new Array(COLS).fill(null));
+  let type = null, cells = null, x = 0, y = 0, rot = 0;
+  for (const ev of (events || [])) {
+    if (ev.type === 'spawn') {
+      type = ev.piece; rot = 0;
+      cells = PIECES[type]?.[0] ?? null;
+      x = ev.x ?? Math.floor(COLS / 2); y = ev.y ?? 0;
+    } else if (ev.type === 'move' && cells) {
+      x += ev.dx;
+    } else if (ev.type === 'rotate' && type && cells) {
+      const len = PIECES[type].length;
+      rot = ((rot + ev.dir) % len + len) % len;
+      cells = PIECES[type][rot];
+      x += ev.kick ?? 0;
+    } else if (ev.type === 'hard' && cells) {
+      let dy = 0;
+      while (_replayCellsFit(cells, x, y + dy + 1, board)) dy++;
+      const color = PIECE_COLORS[type] || '#888';
+      for (const [c, r] of cells) {
+        const nr = r + y + dy, nc = c + x;
+        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) board[nr][nc] = color;
+      }
+      for (let r = ROWS - 1; r >= 0; ) {
+        if (board[r].every(Boolean)) { board.splice(r, 1); board.unshift(new Array(COLS).fill(null)); }
+        else r--;
+      }
+      cells = null; type = null;
+    }
+  }
+  return { board, cells, x, y, type };
+}
+
+function _replayCellsFit(cells, ox, oy, board) {
+  for (const [c, r] of cells) {
+    const nc = c + ox, nr = r + oy;
+    if (nc < 0 || nc >= COLS || nr >= ROWS) return false;
+    if (nr >= 0 && board[nr][nc]) return false;
+  }
+  return true;
+}
+
 // ══════════════════════════════════════════════════════════════
 //  GAME LOOP
 // ══════════════════════════════════════════════════════════════
@@ -3936,6 +3979,8 @@ async function loadActiveMatches() {
   (openOnline || []).forEach(m => {
     if (!combined.find(r => r.id === m.id)) combined.push(m);
   });
+  // Keep liveMatchCache in sync so openSpectatorById works from the VS screen too
+  combined.forEach(m => _liveMatchCache.set(m.id, m));
   if (combined.length === 0) {
     el.innerHTML = '<div style="text-align:center;color:var(--muted);font-family:\'DM Mono\',monospace;font-size:11px;padding:16px;">No active matches yet</div>';
     renderProfileMatches([]);
@@ -3955,13 +4000,18 @@ function renderMatchRow(m) {
   if (m.status === 'pending_opponent' && m.challenger_id === currentUser.id) {
     // I played, waiting for opponent
     const shareLink = getShareLink(m.id);
+    const matchJson = encodeURIComponent(JSON.stringify(m));
     return `<div class="challenge-row" style="flex-direction:column;align-items:stretch;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <div>
           <div class="ch-name" style="color:var(--gold);">⏳ ${isOnline ? 'Searching online…' : 'Waiting for friend'}</div>
           <div class="ch-meta">Your score: <b style="color:var(--text)">${(myScore||0).toLocaleString()}</b> · ${isOnline?'Auto-match':'Code: '+code}</div>
         </div>
-        ${!isOnline ? `<button class="btn-copy-code" onclick="copyMatchLink('${shareLink}',this)">COPY LINK</button>` : ''}
+        <div style="display:flex;gap:6px;">
+          ${!isOnline ? `<button class="btn-copy-code" onclick="copyMatchLink('${shareLink}',this)">COPY LINK</button>` : ''}
+          <button class="btn-secondary" style="font-size:10px;padding:6px 10px;"
+            onclick="openSpectator(decodeURIComponent('${matchJson}'))">WATCH</button>
+        </div>
       </div>
     </div>`;
   }
@@ -4766,23 +4816,31 @@ function openSpectatorById(id) {
 
 function openSpectator(matchJson) {
   const match = typeof matchJson === 'string' ? JSON.parse(matchJson) : matchJson;
+  const iAmChallenger = match.challenger_id === currentUser?.id;
+  // WATCH mode: challenger watching their own pending_opponent match as opponent plays live
+  const watchMode = iAmChallenger && match.status === 'pending_opponent';
+
   document.getElementById('spec-match-title').textContent =
-    `${match.challenger_username || 'Challenger'} vs ${match.opponent_username || 'Opponent'}`;
+    `${match.challenger_username || 'Challenger'} vs ${match.opponent_username || '???'}`;
   document.getElementById('spec-match-meta').textContent =
     `${match.bracket || ''} · ${match.mode === 'classic' ? '♟ Classic' : '⚡ Powered'}`;
 
-  const isOpponentLive = match.status === 'open';
-  document.getElementById('spec-live-label').textContent =
-    isOpponentLive ? 'OPPONENT — LIVE' : 'CHALLENGER — LIVE';
-
   const replayWrap = document.getElementById('spec-replay-wrap');
-  replayWrap.style.display = isOpponentLive ? 'block' : 'none';
+  if (watchMode) {
+    document.getElementById('spec-live-label').textContent = 'OPPONENT — LIVE';
+    replayWrap.style.display = 'block';
+  } else {
+    const isOpponentLive = match.status === 'open';
+    document.getElementById('spec-live-label').textContent =
+      isOpponentLive ? 'OPPONENT — LIVE' : 'CHALLENGER — LIVE';
+    replayWrap.style.display = isOpponentLive ? 'block' : 'none';
+  }
 
   showScreen('spectator-screen');
-  startWatchingMatch(match, isOpponentLive);
+  startWatchingMatch(match, watchMode);
 }
 
-function startWatchingMatch(match, showReplay) {
+function startWatchingMatch(match, watchMode) {
   if (_spectatorChannel) {
     _spectatorChannel.unsubscribe();
     _spectatorChannel = null;
@@ -4796,7 +4854,7 @@ function startWatchingMatch(match, showReplay) {
   // Size boards to full game board, scaled to fit screen
   const SPEC_COLS = COLS;
   const SPEC_ROWS = ROWS;
-  const maxW = Math.min(180, Math.floor((window.innerWidth - 80) / (showReplay ? 2 : 1)));
+  const maxW = Math.min(180, Math.floor((window.innerWidth - 80) / (watchMode ? 2 : 1)));
   const SPEC_CELL = Math.max(8, Math.floor(maxW / SPEC_COLS));
   liveCanvas.width  = SPEC_COLS * SPEC_CELL;
   liveCanvas.height = SPEC_ROWS * SPEC_CELL;
@@ -4805,7 +4863,7 @@ function startWatchingMatch(match, showReplay) {
     replayCanvas.height = SPEC_ROWS * SPEC_CELL;
   }
 
-  function drawSpecBoard(ctx, board) {
+  function drawSpecBoard(ctx, board, piece) {
     const sc = ctx.canvas.width / SPEC_COLS;
     ctx.fillStyle = '#0F0F0F';
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -4818,9 +4876,71 @@ function startWatchingMatch(match, showReplay) {
         }
       }
     }
+    if (piece?.cells) {
+      ctx.fillStyle = piece.color || '#888';
+      ctx.globalAlpha = 0.85;
+      for (const [c, r] of piece.cells) {
+        const nc = c + piece.x, nr = r + piece.y;
+        if (nc >= 0 && nc < SPEC_COLS && nr >= 0 && nr < SPEC_ROWS) {
+          ctx.fillRect(nc * sc + 1, nr * sc + 1, sc - 2, sc - 2);
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
   }
 
-  // 5-second "no data" timeout
+  function renderState(ctx, state) {
+    const piece = state.cells
+      ? { cells: state.cells, x: state.x, y: state.y, color: PIECE_COLORS[state.type] || '#888' }
+      : null;
+    drawSpecBoard(ctx, state.board, piece);
+  }
+
+  if (watchMode) {
+    // WATCH mode: challenger watching their own pending_opponent match.
+    // Right canvas: challenger's completed game (instant replay from stored actions).
+    // Left canvas: opponent's live game (Postgres Changes on match_events).
+    if (replayCtx && Array.isArray(match.challenger_actions) && match.challenger_actions.length > 0) {
+      const state = replayLog(match.challenger_actions);
+      renderState(replayCtx, state);
+      document.getElementById('spec-replay-score').textContent =
+        (match.challenger_score || 0).toLocaleString();
+    }
+
+    // Fetch any existing opponent row immediately
+    (async () => {
+      const { data } = await sb.from('match_events')
+        .select('events, score')
+        .eq('match_id', match.id)
+        .eq('role', 'opponent')
+        .maybeSingle();
+      if (data?.events?.length) {
+        renderState(liveCtx, replayLog(data.events));
+        document.getElementById('spec-live-score').textContent =
+          (data.score || 0).toLocaleString();
+      }
+    })();
+
+    // Subscribe to Postgres Changes for live opponent updates
+    _spectatorChannel = sb.channel(`spec:events:${match.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'match_events',
+        filter: `match_id=eq.${match.id}`,
+      }, (payload) => {
+        const row = payload.new;
+        if (!row || row.role !== 'opponent') return;
+        renderState(liveCtx, replayLog(row.events || []));
+        document.getElementById('spec-live-score').textContent =
+          (row.score || 0).toLocaleString();
+      })
+      .subscribe();
+    return;
+  }
+
+  // Standard live-games spectator mode — broadcast channel snapshots
+  const showReplay = match.status === 'open';
   let _gotFrame = false;
   const _noDataTimer = setTimeout(() => {
     if (_gotFrame) return;
@@ -4880,7 +5000,34 @@ function startSpectatorBroadcast(matchId) {
     });
   }, 500);
 
-  document.addEventListener('sr:gameover', () => clearInterval(_broadcastInterval), { once: true });
+  // Stream action log to match_events every 2 s so spectators can replay
+  const _eventsFlushInterval = setInterval(async () => {
+    if (!G || !G.log || !currentUser) return;
+    await sb.from('match_events').upsert({
+      match_id:   matchId,
+      player_id:  currentUser.id,
+      role,
+      events:     G.log,
+      score:      G.score || 0,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'match_id,player_id' });
+  }, 2000);
+
+  document.addEventListener('sr:gameover', () => {
+    clearInterval(_broadcastInterval);
+    clearInterval(_eventsFlushInterval);
+    // Final flush so the full log is captured
+    if (G?.log && currentUser) {
+      sb.from('match_events').upsert({
+        match_id:   matchId,
+        player_id:  currentUser.id,
+        role,
+        events:     G.log,
+        score:      G.score || 0,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'match_id,player_id' });
+    }
+  }, { once: true });
 }
 
 // ══════════════════════════════════════════════════════════════
